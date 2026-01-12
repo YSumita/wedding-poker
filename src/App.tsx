@@ -150,7 +150,7 @@ function App() {
         ]
       };
 
-      // 4. AA - フルハウス（A♠, A♥, A♣, 10♣, 10♦）
+      // 4. AA - フルハウス（A-High）（A♠, A♥, A♣, 10♣, 10♦）
       // A♣以外のAの2枚の組み合わせ: (A♠, A♥), (A♠, A♦), (A♥, A♦)
       const hand4Player1: CardType[] = [
         { suit: '♠', rank: 'A' },
@@ -171,7 +171,7 @@ function App() {
         { suit: '♣', rank: '10' },
         { suit: '♦', rank: '10' }
       ];
-      const fullHouse: PlayerHandInfo = {
+      const fullHouseA: PlayerHandInfo = {
         playerCards: hand4Player1, // デフォルトとして最初の組み合わせを使用
         bestHand: {
           cards: hand4Best,
@@ -186,9 +186,47 @@ function App() {
         ]
       };
       // 複数のプレイヤーハンドを保存（カスタムプロパティとして）
-      (fullHouse as any).alternativePlayerCards = [hand4Player2, hand4Player3];
+      (fullHouseA as any).alternativePlayerCards = [hand4Player2, hand4Player3];
 
-      return [royalFlush, straightFlush, fourOfAKind, fullHouse];
+      // 5. KK - フルハウス（K-High）（K♠, K♥, K♦, 10♣, 10♦）
+      // K♦以外のKの2枚の組み合わせ: (K♠, K♥), (K♠, K♣), (K♥, K♣)
+      const hand5Player1: CardType[] = [
+        { suit: '♠', rank: 'K' },
+        { suit: '♥', rank: 'K' }
+      ];
+      const hand5Player2: CardType[] = [
+        { suit: '♠', rank: 'K' },
+        { suit: '♣', rank: 'K' }
+      ];
+      const hand5Player3: CardType[] = [
+        { suit: '♥', rank: 'K' },
+        { suit: '♣', rank: 'K' }
+      ];
+      const hand5Best: CardType[] = [
+        { suit: '♠', rank: 'K' },
+        { suit: '♥', rank: 'K' },
+        { suit: '♦', rank: 'K' },
+        { suit: '♣', rank: '10' },
+        { suit: '♦', rank: '10' }
+      ];
+      const fullHouseK: PlayerHandInfo = {
+        playerCards: hand5Player1, // デフォルトとして最初の組み合わせを使用
+        bestHand: {
+          cards: hand5Best,
+          rank: 'Full House',
+          value: 6000000 + 13 * 14 + 10, // Kのスリーカード + 10のペア
+          description: 'Full House, Ks over 10s'
+        },
+        communityCardsUsed: [
+          { suit: '♦', rank: 'K' },
+          { suit: '♣', rank: '10' },
+          { suit: '♦', rank: '10' }
+        ]
+      };
+      // 複数のプレイヤーハンドを保存（カスタムプロパティとして）
+      (fullHouseK as any).alternativePlayerCards = [hand5Player2, hand5Player3];
+
+      return [royalFlush, straightFlush, fourOfAKind, fullHouseA, fullHouseK];
     } catch (error) {
       console.error('Error calculating top 3 hands:', error);
       return [];
@@ -211,8 +249,8 @@ function App() {
       // モーダルが開いている場合は閉じる
       setShowPrize(false);
     } else {
-      // モーダルが閉じている場合: 次の順位を表示（1位→2位→3位→1位...）
-      const nextRank = currentPrizeRank >= 3 ? 1 : currentPrizeRank + 1;
+      // モーダルが閉じている場合: 次の順位を表示（1位→2位→3位→特別賞→1位...）
+      const nextRank = currentPrizeRank >= 4 ? 1 : currentPrizeRank + 1;
       setCurrentPrizeRank(nextRank);
       setShowPrize(true);
     }

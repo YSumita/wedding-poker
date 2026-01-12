@@ -60,6 +60,9 @@
 
 .prize-modal {
   text-align: center;
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
 }
 
 .prize-content {
@@ -67,6 +70,8 @@
   flex-direction: column;
   align-items: center;
   gap: 24px;
+  flex: 1;
+  justify-content: center;
 }
 
 .prize-rank-badge {
@@ -96,11 +101,18 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  max-height: 400px;
 }
 
 .prize-image {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
   display: block;
 }
 
@@ -114,3 +126,4 @@
   flex-direction: column;
   gap: 24px;
 }
+
