@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Card as CardType, Street, PlayerHandInfo } from './types/poker';
 import { PokerTable } from './components/PokerTable';
 import { Top3Hands } from './components/Top3Hands';
@@ -7,13 +7,50 @@ import { Prize } from './components/Prize';
 import './App.css';
 
 function App() {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [street, setStreet] = useState<Street>('preflop');
   const [communityCards, setCommunityCards] = useState<(CardType | null)[]>(Array(5).fill(null));
   const [isInitialized, setIsInitialized] = useState(false);
   const [showTopHand, setShowTopHand] = useState(false);
   const [currentHandIndex, setCurrentHandIndex] = useState(-1);
   const [showPrize, setShowPrize] = useState(false);
-  const [currentPrizeRank, setCurrentPrizeRank] = useState(0);
+  const [currentPrizeRank, setCurrentPrizeRank] = useState(1);
+
+  // BGMを初期化して自動再生
+  useEffect(() => {
+    audioRef.current = new Audio('/casino_bgm.mp3');
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.3; // 音量を調整（0.0-1.0）
+    
+    // ユーザーインタラクション後に再生を開始
+    const playAudio = async () => {
+      try {
+        await audioRef.current?.play();
+      } catch (error) {
+        console.log('BGM再生エラー:', error);
+      }
+    };
+
+    // 初回のユーザーインタラクションを待つ
+    const handleFirstInteraction = () => {
+      playAudio();
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('touchstart', handleFirstInteraction);
+
+    // クリーンアップ
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, []);
 
   // 新しいゲームを開始
   const startNewGame = () => {
@@ -35,7 +72,7 @@ function App() {
       setShowTopHand(false);
       setCurrentHandIndex(-1);
       setShowPrize(false);
-      setCurrentPrizeRank(0);
+      setCurrentPrizeRank(1);
     } catch (error) {
       console.error('Error starting new game:', error);
     }
@@ -226,7 +263,45 @@ function App() {
       // 複数のプレイヤーハンドを保存（カスタムプロパティとして）
       (fullHouseK as any).alternativePlayerCards = [hand5Player2, hand5Player3];
 
-      return [royalFlush, straightFlush, fourOfAKind, fullHouseA, fullHouseK];
+      // 6. JJ - フルハウス（J-High）（J♠, J♥, J♦, 10♣, 10♦）
+      // J♦以外のJの2枚の組み合わせ: (J♠, J♥), (J♠, J♣), (J♥, J♣)
+      const hand6Player1: CardType[] = [
+        { suit: '♠', rank: 'J' },
+        { suit: '♥', rank: 'J' }
+      ];
+      const hand6Player2: CardType[] = [
+        { suit: '♠', rank: 'J' },
+        { suit: '♣', rank: 'J' }
+      ];
+      const hand6Player3: CardType[] = [
+        { suit: '♥', rank: 'J' },
+        { suit: '♣', rank: 'J' }
+      ];
+      const hand6Best: CardType[] = [
+        { suit: '♠', rank: 'J' },
+        { suit: '♥', rank: 'J' },
+        { suit: '♦', rank: 'J' },
+        { suit: '♣', rank: '10' },
+        { suit: '♦', rank: '10' }
+      ];
+      const fullHouseJ: PlayerHandInfo = {
+        playerCards: hand6Player1, // デフォルトとして最初の組み合わせを使用
+        bestHand: {
+          cards: hand6Best,
+          rank: 'Full House',
+          value: 6000000 + 11 * 14 + 10, // Jのスリーカード + 10のペア
+          description: 'Full House, Js over 10s'
+        },
+        communityCardsUsed: [
+          { suit: '♦', rank: 'J' },
+          { suit: '♣', rank: '10' },
+          { suit: '♦', rank: '10' }
+        ]
+      };
+      // 複数のプレイヤーハンドを保存（カスタムプロパティとして）
+      (fullHouseJ as any).alternativePlayerCards = [hand6Player2, hand6Player3];
+
+      return [royalFlush, straightFlush, fourOfAKind, fullHouseA, fullHouseK, fullHouseJ];
     } catch (error) {
       console.error('Error calculating top 3 hands:', error);
       return [];
@@ -243,15 +318,14 @@ function App() {
     setShowTopHand(true);
   };
 
-  // Prizeボタンのクリック処理
-  const handlePrizeClick = () => {
-    if (showPrize) {
-      // モーダルが開いている場合は閉じる
+  // Prizeボタンのクリック処理（各賞品用）
+  const handlePrizeClick = (rank: number) => {
+    if (showPrize && currentPrizeRank === rank) {
+      // 同じ賞品のボタンがクリックされた場合は閉じる
       setShowPrize(false);
     } else {
-      // モーダルが閉じている場合: 次の順位を表示（1位→2位→3位→特別賞→1位...）
-      const nextRank = currentPrizeRank >= 4 ? 1 : currentPrizeRank + 1;
-      setCurrentPrizeRank(nextRank);
+      // 選択された賞品を表示
+      setCurrentPrizeRank(rank);
       setShowPrize(true);
     }
   };
@@ -300,9 +374,32 @@ function App() {
                 <button onClick={handleTopHandsClick} className="btn btn-river btn-tophands">
                   {currentHandIndex < 0 ? 'Top Hands' : 'Next Top Hands'}
                 </button>
-                <button onClick={handlePrizeClick} className="btn btn-river btn-prize">
-                  Prize
-                </button>
+                <div className="prize-buttons">
+                  <button 
+                    onClick={() => handlePrizeClick(1)} 
+                    className={`btn btn-prize btn-prize-1st ${showPrize && currentPrizeRank === 1 ? 'active' : ''}`}
+                  >
+                    1st Prize
+                  </button>
+                  <button 
+                    onClick={() => handlePrizeClick(2)} 
+                    className={`btn btn-prize btn-prize-2nd ${showPrize && currentPrizeRank === 2 ? 'active' : ''}`}
+                  >
+                    2nd Prize
+                  </button>
+                  <button 
+                    onClick={() => handlePrizeClick(3)} 
+                    className={`btn btn-prize btn-prize-3rd ${showPrize && currentPrizeRank === 3 ? 'active' : ''}`}
+                  >
+                    3rd Prize
+                  </button>
+                  <button 
+                    onClick={() => handlePrizeClick(4)} 
+                    className={`btn btn-prize btn-prize-special ${showPrize && currentPrizeRank === 4 ? 'active' : ''}`}
+                  >
+                    Others
+                  </button>
+                </div>
               </div>
             )}
 
