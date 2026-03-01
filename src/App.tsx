@@ -56,15 +56,15 @@ function App() {
   const startNewGame = () => {
     try {
       // コミュニティカードを固定値に設定
-      // フロップ: K♦, J♦, A♣
-      // ターン: 10♣
-      // リバー: 10♦
+      // フロップ: 8♦, 7♦, 2♠
+      // ターン: K♠
+      // リバー: 4♦
       const fixedCommunityCards: CardType[] = [
-        { suit: '♦', rank: 'K' },  // Kd
-        { suit: '♦', rank: 'J' },  // Jd
-        { suit: '♣', rank: 'A' },  // Ac
-        { suit: '♣', rank: '10' }, // Tc
-        { suit: '♦', rank: '10' }, // Td
+        { suit: '♦', rank: '8' },  // 8d
+        { suit: '♦', rank: '7' },  // 7d
+        { suit: '♠', rank: '2' },  // 2s
+        { suit: '♠', rank: 'K' },  // Ks
+        { suit: '♦', rank: '4' },  // 4d
       ];
       setCommunityCards(fixedCommunityCards);
       setStreet('preflop');
@@ -90,10 +90,11 @@ function App() {
   };
 
   // リバーの時のTop4ハンドを固定値で設定
-  // 1. A♦Q♦ - ロイヤルフラッシュ（ダイヤ）
-  // 2. Q♦9♦ - ストレートフラッシュ  
-  // 3. 10のペア - フォーカード
-  // 4. AA - フルハウス
+  // ボード: 8♦, 7♦, 2♠, K♠, 5♦
+  // 1. 4♦6♦ - ストレートフラッシュ
+  // 2. A♦T♦ - フラッシュ
+  // 3. 6♣9♣ - ストレート
+  // 4. K♣K♦ - スリーカード
   const top3Hands = useMemo(() => {
     if (street !== 'river') {
       return [];
@@ -106,202 +107,178 @@ function App() {
         return [];
       }
 
-      // 指定されたハンドを直接作成
-      // 1. A♦Q♦ - ロイヤルフラッシュ（A♦, K♦, Q♦, J♦, 10♦）
+      // 1. 6♦5♦ - ストレートフラッシュ（4♦, 5♦, 6♦, 7♦, 8♦）
       const hand1Player: CardType[] = [
-        { suit: '♦', rank: 'A' },
-        { suit: '♦', rank: 'Q' }
+        { suit: '♦', rank: '6' },
+        { suit: '♦', rank: '5' }
       ];
       const hand1Best: CardType[] = [
-        { suit: '♦', rank: 'A' },
-        { suit: '♦', rank: 'K' },
-        { suit: '♦', rank: 'Q' },
-        { suit: '♦', rank: 'J' },
-        { suit: '♦', rank: '10' }
+        { suit: '♦', rank: '8' },
+        { suit: '♦', rank: '7' },
+        { suit: '♦', rank: '6' },
+        { suit: '♦', rank: '5' },
+        { suit: '♦', rank: '4' }
       ];
-      const royalFlush: PlayerHandInfo = {
+      const straightFlush: PlayerHandInfo = {
         playerCards: hand1Player,
         bestHand: {
           cards: hand1Best,
-          rank: 'Royal Flush',
-          value: 9000000,
-          description: 'Royal Flush'
+          rank: 'Straight Flush',
+          value: 8000000 + 8, // 8-high
+          description: 'Straight Flush'
         },
         communityCardsUsed: [
-          { suit: '♦', rank: 'K' },
-          { suit: '♦', rank: 'J' },
-          { suit: '♦', rank: '10' }
+          { suit: '♦', rank: '8' },
+          { suit: '♦', rank: '7' },
+          { suit: '♦', rank: '4' }
         ]
       };
       
-      // 2. Q♦9♦ - ストレートフラッシュ（Q♦, J♦, 10♦, 9♦, 8♦）
+      // 2. X♦Y♦ (X, Yは任意の数字) - フラッシュ（X♦, Y♦, 8♦, 7♦, 4♦）
       const hand2Player: CardType[] = [
-        { suit: '♦', rank: 'Q' },
-        { suit: '♦', rank: '9' }
+        { suit: '♦', rank: 'A' },
+        { suit: '♦', rank: '10' }
       ];
       const hand2Best: CardType[] = [
-        { suit: '♦', rank: 'Q' },
-        { suit: '♦', rank: 'J' },
+        { suit: '♦', rank: 'A' },
         { suit: '♦', rank: '10' },
-        { suit: '♦', rank: '9' },
-        { suit: '♦', rank: '8' }
+        { suit: '♦', rank: '8' },
+        { suit: '♦', rank: '7' },
+        { suit: '♦', rank: '4' }
       ];
-      const straightFlush: PlayerHandInfo = {
+      const flush: PlayerHandInfo = {
         playerCards: hand2Player,
         bestHand: {
           cards: hand2Best,
-          rank: 'Straight Flush',
-          value: 8000000 + 12, // Q = 12
-          description: 'Straight Flush, Q high'
+          rank: 'Flush',
+          value: 5000000 + 14 * 537824 + 10 * 38416 + 8 * 2744 + 7 * 196 + 4 * 14, // A-highフラッシュ
+          description: 'Flush'
         },
         communityCardsUsed: [
-          { suit: '♦', rank: 'J' },
-          { suit: '♦', rank: '10' }
+          { suit: '♦', rank: '8' },
+          { suit: '♦', rank: '7' },
+          { suit: '♦', rank: '4' }
         ]
-      };
+      } as PlayerHandInfo & { displayText?: string; bestHandCardsDisplay?: CardType[] };
+      (flush as any).displayText = 'XdXd';
+      // 役を構成するカードをXdXd8d7d4dとして表示（最初の2枚をXdXdに）
+      (flush as any).bestHandCardsDisplay = [
+        { suit: '♦', rank: 'X' },
+        { suit: '♦', rank: 'X' },
+        { suit: '♦', rank: '8' },
+        { suit: '♦', rank: '7' },
+        { suit: '♦', rank: '4' }
+      ];
       
-      // 3. 10のペア - フォーカード（10♠, 10♥, 10♣, 10♦ + キッカー）
+      // 3. 6x5x (xは任意のマーク) - ストレート（6x, 5x, 4♦, 7♦, 8♦）
       const hand3Player: CardType[] = [
-        { suit: '♠', rank: '10' },
-        { suit: '♥', rank: '10' }
+        { suit: '♣', rank: '6' },
+        { suit: '♣', rank: '5' }
       ];
       const hand3Best: CardType[] = [
-        { suit: '♠', rank: '10' },
-        { suit: '♥', rank: '10' },
-        { suit: '♣', rank: '10' },
-        { suit: '♦', rank: '10' },
-        { suit: '♣', rank: 'A' } // キッカー（コミュニティカードのA♣）
+        { suit: '♦', rank: '8' },
+        { suit: '♦', rank: '7' },
+        { suit: '♣', rank: '6' },
+        { suit: '♣', rank: '5' },
+        { suit: '♦', rank: '4' }
       ];
-      const fourOfAKind: PlayerHandInfo = {
+      const straight: PlayerHandInfo = {
         playerCards: hand3Player,
         bestHand: {
           cards: hand3Best,
-          rank: 'Four of a Kind',
-          value: 7000000 + 10 * 14 + 14, // 10のフォーカード + Aキッカー
-          description: 'Four of a Kind, 10s'
+          rank: 'Straight',
+          value: 4000000 + 8, // 8-high
+          description: 'Straight, 8 high'
         },
         communityCardsUsed: [
-          { suit: '♣', rank: '10' },
-          { suit: '♦', rank: '10' },
-          { suit: '♣', rank: 'A' }
+          { suit: '♦', rank: '8' },
+          { suit: '♦', rank: '7' },
+          { suit: '♦', rank: '4' }
         ]
-      };
+      } as PlayerHandInfo & { displayText?: string; bestHandCardsDisplay?: CardType[] };
+      (straight as any).displayText = '6x5x';
+      // 役を構成するカードを87654の順で表示（6と5のマークをxに）
+      (straight as any).bestHandCardsDisplay = [
+        { suit: '♦', rank: '8' },
+        { suit: '♦', rank: '7' },
+        { suit: 'x' as any, rank: '6' },
+        { suit: 'x' as any, rank: '5' },
+        { suit: '♦', rank: '4' }
+      ];
 
-      // 4. AA - フルハウス（A-High）（A♠, A♥, A♣, 10♣, 10♦）
-      // A♣以外のAの2枚の組み合わせ: (A♠, A♥), (A♠, A♦), (A♥, A♦)
-      const hand4Player1: CardType[] = [
-        { suit: '♠', rank: 'A' },
-        { suit: '♥', rank: 'A' }
-      ];
-      const hand4Player2: CardType[] = [
-        { suit: '♠', rank: 'A' },
-        { suit: '♦', rank: 'A' }
-      ];
-      const hand4Player3: CardType[] = [
-        { suit: '♥', rank: 'A' },
-        { suit: '♦', rank: 'A' }
+      // 4. K♣K♦ - スリーカード（K♣, K♦, K♠）
+      const hand4Player: CardType[] = [
+        { suit: '♣', rank: 'K' },
+        { suit: '♦', rank: 'K' }
       ];
       const hand4Best: CardType[] = [
-        { suit: '♠', rank: 'A' },
-        { suit: '♥', rank: 'A' },
-        { suit: '♣', rank: 'A' },
-        { suit: '♣', rank: '10' },
-        { suit: '♦', rank: '10' }
+        { suit: '♣', rank: 'K' },
+        { suit: '♦', rank: 'K' },
+        { suit: '♠', rank: 'K' },
+        { suit: '♦', rank: '8' }, // キッカー
+        { suit: '♦', rank: '7' }  // キッカー
       ];
-      const fullHouseA: PlayerHandInfo = {
-        playerCards: hand4Player1, // デフォルトとして最初の組み合わせを使用
+      const threeOfAKindK: PlayerHandInfo = {
+        playerCards: hand4Player,
         bestHand: {
           cards: hand4Best,
-          rank: 'Full House',
-          value: 6000000 + 14 * 14 + 10, // Aのスリーカード + 10のペア
-          description: 'Full House, As over 10s'
+          rank: 'Three of a Kind',
+          value: 3000000 + 13 * 14 * 14 + 8 * 14 + 7, // Kのスリーカード + 8,7キッカー
+          description: 'Three of a Kind, Ks'
         },
         communityCardsUsed: [
-          { suit: '♣', rank: 'A' },
-          { suit: '♣', rank: '10' },
-          { suit: '♦', rank: '10' }
+          { suit: '♠', rank: 'K' },
+          { suit: '♦', rank: '8' },
+          { suit: '♦', rank: '7' }
         ]
-      };
-      // 複数のプレイヤーハンドを保存（カスタムプロパティとして）
-      (fullHouseA as any).alternativePlayerCards = [hand4Player2, hand4Player3];
+      } as PlayerHandInfo & { displayText?: string; bestHandCardsDisplay?: CardType[] };
+      (threeOfAKindK as any).displayText = 'KxKx';
+      // プレイヤーのハンドと役を構成するカードで、K♣K♦をKxKxとして表示
+      (threeOfAKindK as any).bestHandCardsDisplay = [
+        { suit: 'x' as any, rank: 'K' },
+        { suit: 'x' as any, rank: 'K' },
+        { suit: '♠', rank: 'K' },
+        { suit: '♦', rank: '8' },
+        { suit: '♦', rank: '7' }
+      ];
 
-      // 5. KK - フルハウス（K-High）（K♠, K♥, K♦, 10♣, 10♦）
-      // K♦以外のKの2枚の組み合わせ: (K♠, K♥), (K♠, K♣), (K♥, K♣)
-      const hand5Player1: CardType[] = [
-        { suit: '♠', rank: 'K' },
-        { suit: '♥', rank: 'K' }
-      ];
-      const hand5Player2: CardType[] = [
-        { suit: '♠', rank: 'K' },
-        { suit: '♣', rank: 'K' }
-      ];
-      const hand5Player3: CardType[] = [
-        { suit: '♥', rank: 'K' },
-        { suit: '♣', rank: 'K' }
+      // 5. 8x8x - スリーカード（8♠, 8♦, 8♣）
+      const hand5Player: CardType[] = [
+        { suit: '♠', rank: '8' },
+        { suit: '♦', rank: '8' }
       ];
       const hand5Best: CardType[] = [
-        { suit: '♠', rank: 'K' },
-        { suit: '♥', rank: 'K' },
-        { suit: '♦', rank: 'K' },
-        { suit: '♣', rank: '10' },
-        { suit: '♦', rank: '10' }
+        { suit: '♠', rank: '8' },
+        { suit: '♦', rank: '8' },
+        { suit: '♣', rank: '8' },
+        { suit: '♠', rank: 'K' }, // キッカー
+        { suit: '♦', rank: '7' }  // キッカー
       ];
-      const fullHouseK: PlayerHandInfo = {
-        playerCards: hand5Player1, // デフォルトとして最初の組み合わせを使用
+      const threeOfAKind8: PlayerHandInfo = {
+        playerCards: hand5Player,
         bestHand: {
           cards: hand5Best,
-          rank: 'Full House',
-          value: 6000000 + 13 * 14 + 10, // Kのスリーカード + 10のペア
-          description: 'Full House, Ks over 10s'
+          rank: 'Three of a Kind',
+          value: 3000000 + 8 * 14 * 14 + 13 * 14 + 7, // 8のスリーカード + K,7キッカー
+          description: 'Three of a Kind, 8s'
         },
         communityCardsUsed: [
-          { suit: '♦', rank: 'K' },
-          { suit: '♣', rank: '10' },
-          { suit: '♦', rank: '10' }
+          { suit: '♣', rank: '8' },
+          { suit: '♠', rank: 'K' },
+          { suit: '♦', rank: '7' }
         ]
-      };
-      // 複数のプレイヤーハンドを保存（カスタムプロパティとして）
-      (fullHouseK as any).alternativePlayerCards = [hand5Player2, hand5Player3];
+      } as PlayerHandInfo & { displayText?: string; bestHandCardsDisplay?: CardType[] };
+      (threeOfAKind8 as any).displayText = '8x8x';
+      // 役を構成するカードで、8♠と8♣のマークをxに
+      (threeOfAKind8 as any).bestHandCardsDisplay = [
+        { suit: 'x' as any, rank: '8' },
+        { suit: '♦', rank: '8' },
+        { suit: 'x' as any, rank: '8' },
+        { suit: '♠', rank: 'K' },
+        { suit: '♦', rank: '7' }
+      ];
 
-      // 6. JJ - フルハウス（J-High）（J♠, J♥, J♦, 10♣, 10♦）
-      // J♦以外のJの2枚の組み合わせ: (J♠, J♥), (J♠, J♣), (J♥, J♣)
-      const hand6Player1: CardType[] = [
-        { suit: '♠', rank: 'J' },
-        { suit: '♥', rank: 'J' }
-      ];
-      const hand6Player2: CardType[] = [
-        { suit: '♠', rank: 'J' },
-        { suit: '♣', rank: 'J' }
-      ];
-      const hand6Player3: CardType[] = [
-        { suit: '♥', rank: 'J' },
-        { suit: '♣', rank: 'J' }
-      ];
-      const hand6Best: CardType[] = [
-        { suit: '♠', rank: 'J' },
-        { suit: '♥', rank: 'J' },
-        { suit: '♦', rank: 'J' },
-        { suit: '♣', rank: '10' },
-        { suit: '♦', rank: '10' }
-      ];
-      const fullHouseJ: PlayerHandInfo = {
-        playerCards: hand6Player1, // デフォルトとして最初の組み合わせを使用
-        bestHand: {
-          cards: hand6Best,
-          rank: 'Full House',
-          value: 6000000 + 11 * 14 + 10, // Jのスリーカード + 10のペア
-          description: 'Full House, Js over 10s'
-        },
-        communityCardsUsed: [
-          { suit: '♦', rank: 'J' },
-          { suit: '♣', rank: '10' },
-          { suit: '♦', rank: '10' }
-        ]
-      };
-      // 複数のプレイヤーハンドを保存（カスタムプロパティとして）
-      (fullHouseJ as any).alternativePlayerCards = [hand6Player2, hand6Player3];
-
-      return [royalFlush, straightFlush, fourOfAKind, fullHouseA, fullHouseK, fullHouseJ];
+      return [straightFlush, flush, straight, threeOfAKindK, threeOfAKind8];
     } catch (error) {
       console.error('Error calculating top 3 hands:', error);
       return [];

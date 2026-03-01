@@ -27,8 +27,8 @@ export function Top3Hands({ hands }: Top3HandsProps) {
 
   // 同じ強さのハンドをグループ化
   const groupedHands = groupHandsByValue(hands);
-  // Top4のグループを取得（最大4つまで表示）
-  const topGroups = groupedHands.slice(0, 4);
+  // Top5のグループを取得（最大5つまで表示）
+  const topGroups = groupedHands.slice(0, 5);
 
   return (
     <div className="top3-hands">
@@ -55,20 +55,56 @@ export function Top3Hands({ hands }: Top3HandsProps) {
                 <div className="hand-section">
                   <div className="hand-section-label">プレイヤーのハンド（2枚）</div>
                   <div className="hand-cards">
-                    {group.hands[0].playerCards.map((card, cardIndex) => (
-                      <Card key={cardIndex} card={card} isRevealed={true} />
-                    ))}
+                    {(() => {
+                      const hand = group.hands[0];
+                      const alternativePlayerCards = (hand as any).alternativePlayerCards as any[] | undefined;
+                      const allPlayerCards = alternativePlayerCards 
+                        ? [hand.playerCards, ...alternativePlayerCards]
+                        : [hand.playerCards];
+                      const customDisplay = (hand as any).displayText;
+                      const showXdXd = customDisplay === 'XdXd';
+                      const showSuitX = customDisplay === '9x6x' || customDisplay === '6x5x' || customDisplay === '8x8x' || customDisplay === 'KxKx';
+                      
+                      return allPlayerCards.map((playerCards, cardsIndex) => (
+                        <div key={cardsIndex} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {playerCards.map((card: any, cardIndex: number) => {
+                            let displayCard = { ...card };
+                            if (showXdXd) {
+                              displayCard = { ...card, rank: 'X' };
+                            }
+                            if (showSuitX) {
+                              displayCard = { ...card, suit: 'x' as any };
+                            }
+                            return <Card key={cardIndex} card={displayCard} isRevealed={true} />;
+                          })}
+                          {cardsIndex < allPlayerCards.length - 1 && (
+                            <span style={{ color: 'rgba(255, 255, 255, 0.8)', margin: '0 8px', fontWeight: 'bold' }}>or</span>
+                          )}
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
 
                 <div className="hand-section">
                   <div className="hand-section-label">役を構成するカード（5枚）</div>
                   <div className="hand-cards">
-                    {hand.cards.map((card, cardIndex) => (
-                      <Card key={cardIndex} card={card} isRevealed={true} />
-                    ))}
+                    {(() => {
+                      const hand = group.hands[0];
+                      const bestHandCardsDisplay = (hand as any).bestHandCardsDisplay;
+                      const cardsToDisplay = bestHandCardsDisplay || hand.cards;
+                      return cardsToDisplay.map((card: any, cardIndex: number) => (
+                        <Card key={cardIndex} card={card} isRevealed={true} />
+                      ));
+                    })()}
                   </div>
                 </div>
+                {/* Xの説明を追加 */}
+                {group.displayText && (group.displayText.includes('X') || group.displayText.includes('x')) && (
+                  <div className="hand-x-explanation" style={{ marginTop: '8px', fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)', fontStyle: 'italic' }}>
+                    ※{group.displayText.includes('X') ? 'X' : 'x'}は任意の{group.displayText.includes('Xd') || group.displayText.includes('XD') ? '数字' : 'マーク'}を表します
+                  </div>
+                )}
               </div>
             </div>
           );
