@@ -92,7 +92,7 @@ export function Top3Hands({ hands }: Top3HandsProps) {
                     {(() => {
                       const hand = group.hands[0];
                       const bestHandCardsDisplay = (hand as any).bestHandCardsDisplay;
-                      const cardsToDisplay = bestHandCardsDisplay || hand.cards;
+                      const cardsToDisplay = bestHandCardsDisplay || hand.bestHand.cards;
                       return cardsToDisplay.map((card: any, cardIndex: number) => (
                         <Card key={cardIndex} card={card} isRevealed={true} />
                       ));

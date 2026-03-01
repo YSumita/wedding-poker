@@ -61,7 +61,7 @@ export function SingleHand({ hand, rank }: SingleHandProps) {
                       let displayCard = { ...card };
                       // #2の場合、両方ともXd（ランクX）に
                       if (showXdXd) {
-                        displayCard = { ...card, rank: 'X' };
+                        displayCard = { ...card, rank: 'X' } as unknown as Card;
                       }
                       // #3の場合、スーツをxに
                       if (showSuitX) {
@@ -89,7 +89,7 @@ export function SingleHand({ hand, rank }: SingleHandProps) {
           <div className="hand-section">
             <div className="hand-section-label">役を構成するカード（5枚）</div>
             <div className="hand-cards">
-              {((hand as any).bestHandCardsDisplay || handRank.cards).map((card: CardType, cardIndex: number) => (
+              {((hand as any).bestHandCardsDisplay || handRank.cards).map((card: Card, cardIndex: number) => (
                 <CardComponent key={cardIndex} card={card} isRevealed={true} />
               ))}
             </div>
