@@ -21,6 +21,10 @@ export function Card({ card, isRevealed = true, shouldAnimate = false, animation
       // requestAnimationFrameを使って次のフレームでアニメーションを開始
       const frameId = requestAnimationFrame(() => {
         const timer = setTimeout(() => {
+          // カードが捲られるタイミングでcard_flipを再生
+          const flipSound = new Audio('/card_flip.mp3');
+          flipSound.volume = 0.5;
+          flipSound.play().catch(() => {});
           setIsAnimating(true);
           setAnimationCompleted(false);
           // アニメーション終了後に状態をリセット

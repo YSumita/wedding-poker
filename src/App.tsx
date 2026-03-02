@@ -293,6 +293,11 @@ function App() {
     const nextIndex = (currentHandIndex + 1) % top3Hands.length;
     setCurrentHandIndex(nextIndex);
     setShowTopHand(true);
+    
+    // 強いハンド表示と同時にstrong hand.mp3を再生
+    const strongHandSound = new Audio('/strong%20hand.mp3');
+    strongHandSound.volume = 0.5;
+    strongHandSound.play().catch(() => {});
   };
 
   // Prizeボタンのクリック処理（各賞品用）
